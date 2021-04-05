@@ -1,0 +1,87 @@
+---
+# tasks file for k8s_worker
+#
+- name: "Installing docker on master node"
+  package:
+    state: present
+    name: "docker"
+
+- name: "starting docker service"
+  service:
+    name: "docker"
+    state: started
+    enabled: yes
+
+- name: "Configuring Kubernetes repo"
+  yum_repository:
+    name: kubernetes
+    baseurl: https://packages.cloud.google.com/yum/repos/kubernetes-el7-\$basearch
+    description: kubernetes repo
+    enabled: 1
+    gpgcheck: 1
+    repo_gpgcheck: 1
+    gpgkey: https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg
+
+
+- name: "Downloading kubeadm kubectl kubelet "
+  package:
+    state: present
+    name: ['kubeadm' , 'kubelet' , 'kubectl']
+
+- name: "starting kubelet service"
+  service:
+    name: "kubelet"
+    state: started
+    enabled: yes
+
+- name: "Pulling docker images using kubeadm"
+  command: "kubeadm config images pull"
+
+- name: "Changing driver of docker from cgroup to systemd"
+  template:
+    src: "daemon.json"
+    dest: "/etc/docker/daemon.json"
+
+- name: "Restarting docker services"
+  service:
+    name: "docker"
+    state: restarted
+    enabled: yes
+
+- name: "Installing iproute-tc on master node"
+  package:
+    state: present
+    name: "iproute-tc"
+
+- name: "Running sysctl Command"
+  command: sysctl --system
+
+- name: "Setting up iptables"
+  shell: "echo '1' > /proc/sys/net/bridge/bridge-nf-call-iptables"
+
+- name: "Changing some network settings"
+  template:
+    src: "k8s.conf"
+    dest: "/etc/modules-load.d/k8s.conf"
+
+- name: "Restarting kubelet services"
+  service:
+    name: "kubelet"
+    state: restarted
+    enabled: yes
+
+- name: "Creating one directory for storing token"
+  file:
+    state: directory
+    path: "/home/ec2-user/task19"
+
+- name: "Copying Token To Worker"
+  template:
+    src: "token.sh"
+    dest: "/home/ec2-user/task19/token.sh"
+    mode: 777
+
+- name: "Running Token File"
+  command: "sh  /home/ec2-user/task19/token.sh"
+
+
