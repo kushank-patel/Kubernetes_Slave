@@ -11,6 +11,7 @@
     name: "docker"
     state: started
     enabled: yes
+  changed_when: false
 
 - name: "Configuring Kubernetes repo"
   yum_repository:
@@ -27,20 +28,24 @@
   package:
     state: present
     name: ['kubeadm' , 'kubelet' , 'kubectl']
+  changed_when: false
 
 - name: "starting kubelet service"
   service:
     name: "kubelet"
     state: started
     enabled: yes
+  changed_when: false
 
 - name: "Pulling docker images using kubeadm"
   command: "kubeadm config images pull"
+  changed_when: false
 
 - name: "Changing driver of docker from cgroup to systemd"
   template:
     src: "daemon.json"
     dest: "/etc/docker/daemon.json"
+  changed_when: false
 
 - name: "Restarting docker services"
   service:
@@ -55,10 +60,12 @@
 
 - name: "Running sysctl Command"
   command: sysctl --system
+  changed_when: false
 
 - name: "Setting up iptables"
   shell: "echo '1' > /proc/sys/net/bridge/bridge-nf-call-iptables"
-
+  changed_when: false
+ 
 - name: "Changing some network settings"
   template:
     src: "k8s.conf"
@@ -74,14 +81,17 @@
   file:
     state: directory
     path: "/home/ec2-user/task19"
+  changed_when: false
 
 - name: "Copying Token To Worker"
   template:
     src: "token.sh"
     dest: "/home/ec2-user/task19/token.sh"
     mode: 777
+  changed_when: false
 
 - name: "Running Token File"
   command: "sh  /home/ec2-user/task19/token.sh"
-
+  changed_when: false
+  
 
